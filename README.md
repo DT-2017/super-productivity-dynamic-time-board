@@ -18,11 +18,11 @@
 
 ### 安装
 
-1. 打开 [Releases](../../releases)，下载 `SuperProductivity_DynamicTimeBoard_v1.0.0.zip`（不要解压）。
+1. 打开 [Releases](../../releases)，下载 `SuperProductivity_DynamicTimeBoard_v1.0.1.zip`（不要解压）。
 2. 在 Super Productivity 中打开 **设置 → 插件 → 选择插件文件**，选中 ZIP 并启用。
 3. 点击顶栏中的 **时间规划** 打开看板。
 
-已在 Super Productivity 18.21.2 上由初始使用者进行基本体验测试；其他版本、平台尚未系统测试。插件使用官方 Plugin API。
+已在 Super Productivity 19.3.1W 上由初始使用者进行基本体验测试；其他版本、平台尚未系统测试。插件使用官方 Plugin API。
 
 ### 开发和打包
 
