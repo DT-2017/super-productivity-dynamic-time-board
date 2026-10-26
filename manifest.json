@@ -1,12 +1,14 @@
 {
   "id": "dynamic-time-board-cn",
   "name": "动态时间规划看板",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "按截止日期自动滚动分组：今天、本周、本月、未来。只读，不改变任务。",
   "manifestVersion": 1,
   "minSupVersion": "18.0.0",
   "iFrame": true,
   "sidePanel": false,
-  "permissions": ["getTasks"],
+  "permissions": [
+    "getTasks"
+  ],
   "hooks": []
 }
