@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>动态时间规划看板</title>
+<style>
+:root{font-family:system-ui,-apple-system,'Microsoft YaHei',sans-serif;color:#343c49;background:#fafaf9}
+*{box-sizing:border-box}body{margin:0;padding:22px}header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px}h1{font-size:21px;margin:0 0 5px;font-weight:700}.muted{font-size:12px;color:#818896}button,select{font:inherit;border:1px solid #e3e5e8;border-radius:9px;background:white;color:#344154;padding:8px 12px;cursor:pointer}button:hover{background:#f7f8fa}select{max-width:230px} .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.board{display:grid;grid-template-columns:repeat(4,minmax(175px,1fr));gap:12px;align-items:stretch;min-height:60vh}.lane{border-radius:14px;padding:13px;min-width:0;border:1px solid var(--border);background:var(--bg)}.lane h2{font-size:15px;margin:0 0 4px;color:var(--ink);display:flex;align-items:center;justify-content:space-between}.lane .count{font-size:12px;font-weight:500;border-radius:99px;background:#ffffffaa;padding:2px 8px}.hint{font-size:11px;color:#818895;margin-bottom:12px}.task{background:#fff;border:1px solid #e7e8e8;border-radius:10px;padding:10px;margin-bottom:8px;box-shadow:0 1px 2px #00000006;overflow-wrap:anywhere}.task-title{font-size:13px;line-height:1.5;font-weight:550}.task-meta{color:#8a919c;font-size:11px;margin-top:6px}.late{color:#b64b42;font-weight:650}.empty{padding:30px 5px;text-align:center;color:#aaa;font-size:12px}.foot{padding:13px 0;color:#79808c;font-size:12px}.notice{margin:12px 0;padding:12px;background:#fff4e6;border:1px solid #f2dcaf;border-radius:9px;color:#765727;font-size:12px}.hide{display:none}.unscheduled{margin-top:16px;padding:12px;border-radius:12px;background:#f0f1f2}.unscheduled-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.unscheduled-items{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin-top:12px}.unscheduled-items .task{margin:0}@media(max-width:880px){.board{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){body{padding:12px}.board{grid-template-columns:1fr}}
+</style></head><body>
+<header><div><h1>动态时间规划看板</h1><div id="date" class="muted">正在加载日期…</div></div><div class="actions"><select id="project"><option value="all">所有项目</option></select><button id="reload" type="button">刷新任务</button></div></header>
+<div id="notice" class="notice hide"></div>
+<section class="board" id="board"></section>
+<section class="unscheduled"><div class="unscheduled-head"><strong>未设置截止日期 <span id="noCount">0</span></strong><button id="toggleNo" type="button">展开 / 收起</button></div><div id="noItems" class="unscheduled-items hide"></div></section>
+<div class="foot" id="status">读取任务中…</div>
+<script>
+(()=>{'use strict';
+const lanes=[{key:'today',title:'今天',help:'包含逾期任务',bg:'#faeae9',border:'#f0ceca',ink:'#a64d45'},{key:'week',title:'本周',help:'明天至本周日',bg:'#fcf2dd',border:'#efdfb9',ink:'#8e6c22'},{key:'month',title:'本月',help:'本周之后至月底',bg:'#e8f1f8',border:'#d0e2f0',ink:'#39748a'},{key:'future',title:'未来',help:'下个月及以后',bg:'#f0f1f2',border:'#e1e2e4',ink:'#707680'}];
+let tasks=[], projects=[], refreshBusy=false, lastDay='';
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,'0');
+const dayKey=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parseDue=t=>{ if(typeof t.dueDay==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(t.dueDay))return t.dueDay;
+ if(typeof t.dueWithTime==='number'&&Number.isFinite(t.dueWithTime))return dayKey(new Date(t.dueWithTime)); return null;};
+function classify(key,now){if(!key)return 'none';const today=dayKey(now);if(key<=today)return 'today';
+ const mondayOffset=(now.getDay()+6)%7;const sunday=new Date(now.getFullYear(),now.getMonth(),now.getDate()+6-mondayOffset);
+ if(key<=dayKey(sunday))return 'week';const monthEnd=dayKey(new Date(now.getFullYear(),now.getMonth()+1,0));return key<=monthEnd?'month':'future';}
+function makeCard(task,now){const el=document.createElement('div');el.className='task';const heading=document.createElement('div');heading.className='task-title';heading.textContent=task.title||'（无标题）';el.append(heading);
+ const meta=document.createElement('div');meta.className='task-meta';const key=parseDue(task), project=projects.find(p=>p.id===task.projectId);const bits=[];if(project)bits.push(project.title);if(key)bits.push('截止 '+key);meta.textContent=bits.join(' · ');if(key&&key<dayKey(now))meta.classList.add('late');el.append(meta);return el;}
+function render(){const now=new Date(), selected=$('project').value, active=tasks.filter(t=>t&&!t.isDone&&!t.parentId&&(selected==='all'||t.projectId===selected));
+ const bins={today:[],week:[],month:[],future:[],none:[]};for(const t of active)bins[classify(parseDue(t),now)].push(t);
+ for(const vals of Object.values(bins))vals.sort((a,b)=>String(parseDue(a)||'9999').localeCompare(String(parseDue(b)||'9999'))||String(a.title).localeCompare(String(b.title),'zh-CN'));
+ const board=$('board');board.replaceChildren();for(const cfg of lanes){const section=document.createElement('section');section.className='lane';section.style.setProperty('--bg',cfg.bg);section.style.setProperty('--border',cfg.border);section.style.setProperty('--ink',cfg.ink);
+ const head=document.createElement('h2');const ttl=document.createElement('span');ttl.textContent=cfg.title;const count=document.createElement('span');count.className='count';count.textContent=bins[cfg.key].length;head.append(ttl,count);section.append(head);
+ const hint=document.createElement('div');hint.className='hint';hint.textContent=cfg.help;section.append(hint);
+ if(!bins[cfg.key].length){const e=document.createElement('div');e.className='empty';e.textContent='暂无任务';section.append(e);}else bins[cfg.key].forEach(t=>section.append(makeCard(t,now)));board.append(section);}
+ $('noCount').textContent=bins.none.length;const no=$('noItems');no.replaceChildren();bins.none.forEach(t=>no.append(makeCard(t,now)));
+ $('date').textContent=`今天：${dayKey(now)} · 周一为每周起点 · 本地时间`;
+ $('status').textContent=`共读取 ${tasks.length} 项任务，本视图显示 ${active.length} 项未完成的顶层任务；最近刷新：${now.toLocaleTimeString('zh-CN')}`;lastDay=dayKey(now);}
+async function reload(){if(refreshBusy)return;refreshBusy=true;$('reload').disabled=true;try{
+ if(!window.PluginAPI||typeof PluginAPI.getTasks!=='function')throw new Error('当前版本未提供 getTasks 插件接口');
+ const results=await Promise.all([PluginAPI.getTasks(),PluginAPI.getAllProjects().catch(()=>[])]);
+ if(!Array.isArray(results[0]))throw new Error('getTasks 返回的不是任务列表');tasks=results[0];projects=Array.isArray(results[1])?results[1]:[];
+ const sel=$('project'),previous=sel.value;sel.replaceChildren();let op=document.createElement('option');op.value='all';op.textContent='所有项目';sel.append(op);
+ for(const p of projects){op=document.createElement('option');op.value=p.id;op.textContent=p.title;sel.append(op);}sel.value=[...sel.options].some(x=>x.value===previous)?previous:'all';
+ $('notice').classList.add('hide');render();}catch(e){$('notice').textContent='无法读取任务：'+(e&&e.message?e.message:String(e))+'。请确认插件已启用，并从插件菜单打开。';$('notice').classList.remove('hide');$('status').textContent='读取失败';}finally{refreshBusy=false;$('reload').disabled=false;}}
+ $('reload').addEventListener('click',reload);$('project').addEventListener('change',render);$('toggleNo').addEventListener('click',()=>$('noItems').classList.toggle('hide'));
+ reload();setInterval(()=>{if(dayKey(new Date())!==lastDay)reload();},30000);
+ setInterval(()=>{if(!document.hidden)reload();},120000);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)reload();});
+})();
+</script></body></html>
