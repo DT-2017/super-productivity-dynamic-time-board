@@ -1,5 +1,12 @@
+# Local build artifacts
+dist/
+*.pyc
+__pycache__/
 .DS_Store
 Thumbs.db
 *.log
 node_modules/
 *.tmp
+
+# Optional browser test preview output
+preview_*.png

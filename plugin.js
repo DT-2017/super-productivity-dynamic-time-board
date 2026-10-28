@@ -1,6 +1,6 @@
-// Opens the isolated, read-only time board. No task updates or external requests.
+// Opens the isolated, read-only time board. The UI defaults to English; Chinese can be selected inside the board.
 PluginAPI.registerHeaderButton({
-  label: '时间规划',
+  label: 'Time Board',
   icon: 'view_week',
   onClick: () => PluginAPI.showIndexHtmlAsView(),
 });

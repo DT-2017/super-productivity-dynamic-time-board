@@ -1,49 +1,294 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>动态时间规划看板</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Dynamic Time Board</title>
 <style>
-:root{font-family:system-ui,-apple-system,'Microsoft YaHei',sans-serif;color:#343c49;background:#fafaf9}
-*{box-sizing:border-box}body{margin:0;padding:22px}header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px}h1{font-size:21px;margin:0 0 5px;font-weight:700}.muted{font-size:12px;color:#818896}button,select{font:inherit;border:1px solid #e3e5e8;border-radius:9px;background:white;color:#344154;padding:8px 12px;cursor:pointer}button:hover{background:#f7f8fa}select{max-width:230px} .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.board{display:grid;grid-template-columns:repeat(4,minmax(175px,1fr));gap:12px;align-items:stretch;min-height:60vh}.lane{border-radius:14px;padding:13px;min-width:0;border:1px solid var(--border);background:var(--bg)}.lane h2{font-size:15px;margin:0 0 4px;color:var(--ink);display:flex;align-items:center;justify-content:space-between}.lane .count{font-size:12px;font-weight:500;border-radius:99px;background:#ffffffaa;padding:2px 8px}.hint{font-size:11px;color:#818895;margin-bottom:12px}.task{background:#fff;border:1px solid #e7e8e8;border-radius:10px;padding:10px;margin-bottom:8px;box-shadow:0 1px 2px #00000006;overflow-wrap:anywhere}.task-title{font-size:13px;line-height:1.5;font-weight:550}.task-meta{color:#8a919c;font-size:11px;margin-top:6px}.late{color:#b64b42;font-weight:650}.empty{padding:30px 5px;text-align:center;color:#aaa;font-size:12px}.foot{padding:13px 0;color:#79808c;font-size:12px}.notice{margin:12px 0;padding:12px;background:#fff4e6;border:1px solid #f2dcaf;border-radius:9px;color:#765727;font-size:12px}.hide{display:none}.unscheduled{margin-top:16px;padding:12px;border-radius:12px;background:#f0f1f2}.unscheduled-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.unscheduled-items{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin-top:12px}.unscheduled-items.hide{display:none}.unscheduled-items .task{margin:0}@media(max-width:880px){.board{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){body{padding:12px}.board{grid-template-columns:1fr}}
+:root{font-family:system-ui,-apple-system,'Segoe UI','Microsoft YaHei',sans-serif;color:#343c49;background:#fafaf9}*{box-sizing:border-box}body{margin:0;padding:20px}header{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;column-gap:18px;row-gap:12px;margin-bottom:14px}h1{margin:0 0 5px;font-size:21px;font-weight:700}header .secondary{max-width:600px}.muted{color:#7c8592;font-size:12px}.actions{display:flex!important;gap:8px;flex-flow:row nowrap!important;align-items:center;justify-content:flex-end;white-space:nowrap;min-width:0}button,select{font:inherit;background:#fff;border:1px solid #dde2e6;border-radius:9px;color:#3a4555;padding:8px 12px;cursor:pointer}select{max-width:190px}.actions #language{width:115px;flex:0 0 115px}.actions #project{width:175px;flex:0 0 175px}.actions #reload{flex:0 0 auto}button:hover{background:#f4f6f7}button:disabled{opacity:.5;cursor:wait}.actions button{white-space:nowrap}.board{display:grid;grid-template-columns:repeat(4,minmax(155px,1fr));gap:12px;align-items:stretch;min-height:55vh}.lane{min-width:0;border-radius:14px;border:1px solid var(--border);background:var(--bg);padding:14px}.section-title{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--ink,#4d5965);font-size:15px;font-weight:700}.count{display:inline-flex;align-items:center;justify-content:center;border-radius:99px;min-width:24px;height:24px;padding:0 7px;background:#ffffffc9;font-weight:650;font-size:12px;flex-shrink:0}.help-detail{display:none}.show-help .help-detail{display:block}.actions #toggleHelp{flex:0 0 auto;white-space:nowrap}.hint{color:#8a919b;font-size:11px;margin:5px 0 13px;line-height:1.5}.task{border-radius:10px;background:#fff;border:1px solid #e7e9eb;padding:10px 11px;margin:8px 0;overflow-wrap:anywhere;box-shadow:0 1px 2px #00000006}.task-title{font-size:13px;line-height:1.5;font-weight:600}.task-meta{margin-top:5px;color:#7d8896;font-size:11px;line-height:1.45}.task-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:9px;min-width:0}
+.task-heading .task-title{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.project-tag{display:inline-block;flex:0 1 auto;max-width:45%;min-width:0;align-self:flex-start;padding:2px 7px;border-radius:6px;background:#f3f5f7;color:#788391;border:1px solid #e8edf1;font-size:10px;line-height:1.45;font-weight:500;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.task-meta{display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin-top:7px;line-height:1.4}
+.meta-row{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:6px;row-gap:2px;min-width:0;max-width:100%}
+.meta-label{color:#9099a5;white-space:nowrap;flex-shrink:0}
+.meta-day,.meta-time{white-space:nowrap;font-variant-numeric:tabular-nums;overflow-wrap:normal;word-break:normal}
+.meta-separator{white-space:nowrap;color:#a5aeb8}
+.meta-legacy{color:#8a919b}
+.badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}.pill{font-size:10px;font-weight:600;border-radius:6px;padding:3px 6px;line-height:1.4}.pill.neutral{color:#4d6475;background:#e9f1f7}.pill.caution{color:#ad6326;background:#fff1df}.pill.attention{color:#866c21;background:#fff2d1}.pill.danger{color:#ae433c;background:#fae8e5}.empty{text-align:center;color:#a3a9b2;font-size:12px;padding:30px 6px}.foot{margin:12px 0 0;color:#818996;font-size:11px}.notice{margin:0 0 12px;background:#fff5e1;color:#75592a;border:1px solid #f0dfb9;padding:10px 12px;border-radius:10px;font-size:12px}.error{background:#ffeded;border-color:#f1c8c8;color:#a83b3b}.bottom{margin-top:14px;background:#eff1f3;padding:13px;border-radius:12px}.bottom.unknown{background:#fff5e7}.unscheduled-head,.alert-title{display:flex;align-items:center;justify-content:space-between;gap:10px}.unscheduled-head .section-title,.alert-title .section-title{justify-content:flex-start;gap:12px}.small-btn{font-size:12px;padding:6px 10px;flex-shrink:0}.bottom-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:9px;max-height:440px;overflow-y:auto;align-content:start;padding-right:3px}.bottom-items .task{margin:0}.hidden{display:none!important}.alerts{margin-top:14px;background:#fff9ee;border:1px solid #f2e8ce;border-radius:12px;padding:13px}.risk-window-control{display:inline-flex;align-items:center;gap:6px;margin-left:auto;color:#6b7280;font-size:12px;white-space:nowrap}.risk-window-control select{font-size:12px;padding:5px 24px 5px 8px;max-width:none;min-width:78px}.risk-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}@media(max-width:600px){.risk-window-control{margin-left:0}.risk-controls{justify-content:flex-end}}.risk-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:9px;max-height:440px;overflow-y:auto;align-content:start;padding-right:3px}.risk-items .task{margin:0}.legend{font-size:11px;color:#89919d;margin-top:8px}button:focus-visible,select:focus-visible{outline:2px solid #628ed7;outline-offset:2px}@media(max-width:910px){.board{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:760px){header{grid-template-columns:1fr}.actions{justify-content:flex-start;flex-wrap:wrap!important}.actions #project{width:175px;flex:0 1 175px}}@media(max-width:580px){body{padding:12px}.board{grid-template-columns:1fr}.actions #language{width:100px;flex-basis:100px}.actions #project{width:150px;flex-basis:150px}}
 </style></head><body>
-<header><div><h1>动态时间规划看板</h1><div id="date" class="muted">正在加载日期…</div></div><div class="actions"><select id="project"><option value="all">所有项目</option></select><button id="reload" type="button">刷新任务</button></div></header>
-<div id="notice" class="notice hide"></div>
-<section class="board" id="board"></section>
-<section class="unscheduled"><div class="unscheduled-head"><strong>未设置截止日期 <span id="noCount">0</span></strong><button id="toggleNo" type="button" aria-controls="noItems" aria-expanded="false">展开</button></div><div id="noItems" class="unscheduled-items hide"></div></section>
-<div class="foot" id="status">读取任务中…</div>
+<header><div><h1 id="pageTitle">Dynamic Time Board</h1><div id="summary" class="muted help-detail"></div><div id="date" class="muted"></div></div><div class="actions"><select id="language" aria-label="Language"><option value="en">English</option><option value="zh">中文</option></select><select id="project" aria-label="Project"><option value="all">All Projects</option></select><button id="reload" type="button">Refresh Tasks</button><button id="toggleHelp" type="button" aria-pressed="false">Show Help</button></div></header>
+<div id="error" role="alert" class="notice error hidden"></div><div id="warning" role="status" class="notice hidden"></div>
+<main><section id="board" class="board"></section><section id="alerts" class="alerts"></section><section id="unscheduled" class="bottom"></section><section id="unknown" class="bottom unknown hidden"></section></main>
+<div id="status" class="foot help-detail" aria-live="off">Loading tasks…</div><div class="legend help-detail" id="estimateNote"></div>
 <script>
+/* Dynamic Time Board v1.1.0 - pure, read-only classification logic.
+ * Scheduling fields: dueWithTime/dueDay exposed by the official Task API.
+ * Deadline fields: deadlineWithTime/deadlineDay; control the lane ONLY when no task schedule is available.
+ * Risk warning window is user-configurable (1 / 3 / 7 local calendar days; default 3).
+ * getAppState() explicitly omits planner.days; do not assert Planner membership.
+ * The no-date bucket means "neither readable task schedule nor deadline"; deadlines can be fallback placements.
+ * A standalone plannedAt is ambiguous and stays in the separate unknown bucket.
+ */
+const TimeBoardLogic = (() => {
+  'use strict';
+  const pad = n => String(n).padStart(2,'0');
+  const key = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const dateOnly = v => {
+    if(typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+    const [y,m,d] = v.split('-').map(Number);
+    const x = new Date(y,m-1,d);
+    return x.getFullYear()===y && x.getMonth()===m-1 && x.getDate()===d ? v : null;
+  };
+  const stamp = v => {
+    if(typeof v !== 'number' || !Number.isFinite(v) || v < 946684800000 || v > 4102444800000) return null;
+    return v;
+  };
+  const addDays = (date,days) => key(new Date(date.getFullYear(),date.getMonth(),date.getDate()+days));
+  const fromLocalDay = v => {const d=dateOnly(v);if(!d)return null;const [y,m,day]=d.split('-').map(Number);return new Date(y,m-1,day);};
+  function planFor(task) {
+    // dueWithTime and dueDay describe task scheduling, NOT deadline fields.
+    // dueWithTime can be exactly 00:00, which is still a valid scheduled time.
+    const hasTimed=task?.dueWithTime!=null && task.dueWithTime!=='';
+    const hasDay=task?.dueDay!=null && task.dueDay!=='';
+    const ts=stamp(task?.dueWithTime);
+    if(ts!==null) return {day:key(new Date(ts)),startMs:ts,source:'timed',kind:'scheduled'};
+    const day=dateOnly(task?.dueDay);
+    if(day) return {day,startMs:null,source:'day',kind:'scheduled'};
+    // Invalid nonempty scheduling data must never be silently labeled unscheduled.
+    if(hasTimed || hasDay) return {day:null,startMs:null,source:'invalid',kind:'unknown'};
+    // plannedAt alone is not authoritative: it does not guarantee Planner membership.
+    if(task?.plannedAt!=null && task.plannedAt!=='' && task.plannedAt!==0)
+      return {day:null,startMs:null,source:'legacy',kind:'unknown'};
+    // Accurate, narrow statement: the Task API exposes no planned day/time.
+    // We cannot inspect independent Planner days through the official PluginAppState.
+    return {day:null,startMs:null,source:'none',kind:'unscheduled'};
+  }
+  function lane(plan,today){if(!plan.day)return plan.kind;const d=key(today);if(plan.day<=d)return 'today';if(plan.day<=addDays(today,7))return 'week';if(plan.day<=addDays(today,30))return 'month';return 'future';}
+  function deadlineFor(task){const ts=stamp(task?.deadlineWithTime);const d=ts!==null?key(new Date(ts)):dateOnly(task?.deadlineDay);return {day:d,at:ts,kind:ts!==null?'time':d?'day':'none'};}
+  const daysBetween = (start,end) => {
+    const a=fromLocalDay(start),b=fromLocalDay(end);
+    return a&&b?Math.round((Date.UTC(b.getFullYear(),b.getMonth(),b.getDate())-Date.UTC(a.getFullYear(),a.getMonth(),a.getDate()))/86400000):null;
+  };
+  function timeState(task,plan,now){
+    if(plan.startMs===null)return {kind:plan.day&&plan.day<key(now)?'missedDay':'none',ms:null,days:plan.day?daysBetween(plan.day,key(now)):null};
+    const estimate=task?.timeEstimate;
+    const validEstimate=typeof estimate==='number'&&Number.isFinite(estimate)&&estimate>0;
+    const end=plan.startMs+(validEstimate?estimate:0);
+    if(now.getTime()<plan.startMs)return {kind:'beforeStart',ms:plan.startMs-now.getTime()};
+    if(validEstimate && now.getTime()<=end)return {kind:'inWindow',ms:end-now.getTime()};
+    if(!validEstimate)return {kind:'startElapsed',ms:now.getTime()-plan.startMs};
+    return {kind:'windowElapsed',ms:now.getTime()-end};
+  }
+  function deadlineState(deadline,now,riskDays=3){
+    if(deadline.kind==='none')return {kind:'none'};
+    // Risk windows are calendar-based. For timed deadlines we still use the exact
+    // timestamp to detect overdue status and display a precise countdown.
+    const dayDistance=daysBetween(key(now),deadline.day);
+    const windowDays=[1,3,7].includes(riskDays)?riskDays:3;
+    if(deadline.at!==null){
+      const diff=deadline.at-now.getTime();
+      if(diff<0)return {kind:'overdueExact',ms:-diff};
+      if(dayDistance!==null && dayDistance<=windowDays)return {kind:'soonExact',ms:diff};
+      return {kind:'future'};
+    }
+    if(dayDistance<0)return {kind:'overdueDay',days:-dayDistance};
+    if(dayDistance===0)return {kind:'today'};
+    if(dayDistance<=windowDays)return {kind:'soonDay',days:dayDistance};
+    return {kind:'future'};
+  }
+  function conflicting(plan,deadline){
+    if(!plan.day||!deadline.day)return false;
+    if(plan.startMs!==null && deadline.at!==null) return plan.startMs>deadline.at;
+    // Date-only deadline lasts through the end of the calendar day.
+    return plan.day>deadline.day;
+  }
+  function formatElapsed(ms,language){
+    const mins=Math.max(1,Math.floor(Math.max(0,ms)/60000));
+    const d=Math.floor(mins/1440),h=Math.floor((mins%1440)/60),m=mins%60;
+    return language==='zh'?[d?`${d}天`:'',h?`${h}小时`:'',!d&&(!h||m)?`${m}分钟`:''].filter(Boolean).join(''):[d?`${d}d`:'',h?`${h}h`:'',!d&&(!h||m)?`${m}m`:''].filter(Boolean).join(' ');
+  }
+  const clock=ts=>{const d=new Date(ts);return `${pad(d.getHours())}:${pad(d.getMinutes())}`;};
+  function planLabel(plan,task){if(!plan.day)return null;if(plan.startMs===null)return plan.day;const estimate=task.timeEstimate;const end=typeof estimate==='number'&&estimate>0?plan.startMs+estimate:null;return `${plan.day} ${clock(plan.startMs)}${end===null?'':`–${key(new Date(end))===plan.day?clock(end):`${key(new Date(end))} ${clock(end)}`}`}`;}
+  function classify(task,planner,now,riskDays=3){
+    const plan=planFor(task),deadline=deadlineFor(task);
+    // A scheduled date always wins. When absent, a deadline is only a *placement fallback*,
+    // never misrepresented as a task plan or as a scheduled execution time.
+    let placementSource='none',placementDay=null,placementAt=null,placementLane='unscheduled';
+    if(plan.day){placementSource='plan';placementDay=plan.day;placementAt=plan.startMs;placementLane=lane(plan,now);}
+    else if(deadline.day){placementSource='deadline';placementDay=deadline.day;placementAt=deadline.at;
+      placementLane=lane({day:deadline.day,kind:'scheduled'},now);}
+    else if(plan.kind==='unknown'){placementSource='unknown';placementLane='unknown';}
+    return {plan,deadline,placementSource,placementDay,placementAt,lane:placementLane,
+      time:timeState(task,plan,now),risk:deadlineState(deadline,now,riskDays),conflict:conflicting(plan,deadline)};
+  }
+  return {key,dateOnly,stamp,addDays,planFor,lane,deadlineFor,daysBetween,timeState,deadlineState,conflicting,formatElapsed,planLabel,classify};
+})();
 (()=>{'use strict';
-const lanes=[{key:'today',title:'今天',help:'包含逾期任务',bg:'#faeae9',border:'#f0ceca',ink:'#a64d45'},{key:'week',title:'本周',help:'明天至本周日',bg:'#fcf2dd',border:'#efdfb9',ink:'#8e6c22'},{key:'month',title:'本月',help:'本周之后至月底',bg:'#e8f1f8',border:'#d0e2f0',ink:'#39748a'},{key:'future',title:'未来',help:'下个月及以后',bg:'#f0f1f2',border:'#e1e2e4',ink:'#707680'}];
-let tasks=[], projects=[], refreshBusy=false, lastDay='';
+const L=TimeBoardLogic;
+const translations={
+ en:{title:'Dynamic Time Board',summary:'Planned dates first; deadlines are a fallback when no plan is set.',today:'Today',week:'Next 7 Days',month:'Days 8–30',future:'Beyond 30 Days',todayHint:'Today + unfinished earlier plans',weekHint:'Tomorrow through day 7',monthHint:'Day 8 through day 30',futureHint:'Day 31 onward',all:'All Projects',refresh:'Refresh Tasks',showHelp:'Show Help',hideHelp:'Hide Help',lang:'Language',project:'Project',noPlans:'No Plan or Deadline',unverified:'Schedule Unverified',risk:'Deadline Alerts',riskHint:'Overdue and due-today tasks, deadlines within the next {days} local calendar day(s), plus plans scheduled after their deadlines. The window counts today as day 0 and includes day {days}. Timed deadlines use the exact clock for overdue status. Alerts never move tasks.',noPlanHint:'Neither a task schedule nor a deadline was found in readable task fields. Deadline-only tasks appear in the dated columns with a fallback label.',unknownHint:'A standalone plannedAt or invalid schedule field needs review. With no deadline, these tasks are shown here rather than treated as unscheduled.',noData:'No tasks',expand:'Expand',collapse:'Collapse',planned:'Planned',deadline:'Deadline',noDeadline:'No deadline',inbox:'Inbox',loading:'Loading tasks…',readError:'Could not read tasks: {error}',apiMissing:'PluginAPI.getTasks is unavailable',status:'{total} tasks read · {shown} incomplete top-level tasks · Refreshed {at}',asOf:'Today: {day} · Rolling calendar-day windows · Local time',planLate:'Planned day passed {days}d ago — reschedule',startPast:'Scheduled start passed by {elapsed}',windowPast:'Past estimated end by {elapsed}',inWindow:'Within estimated time window',beforeStart:'Scheduled to start in {elapsed}',dueToday:'Deadline today',dueTomorrow:'Deadline tomorrow',dueIn:'Deadline in {days} days',dueLate:'Deadline overdue by {days} days',dueLateTime:'Deadline overdue by {elapsed}',dueSoonTime:'Deadline in {elapsed}',conflict:'Plan after deadline',estimateNote:'Time-window status uses task time estimate; it is not a formal deadline.',dataLimited:'Some Planner-only scheduling cannot be verified with the plugin API. Deadline fallback does not mean an execution plan exists.',planSource:'Planner',taskSource:'Task schedule',legacySource:'PlannedAt only (unverified)',fallback:'No execution plan · grouped by deadline',prefsUnavailable:'Preference storage unavailable; language or expansion may reset when reopening.',dayOnly:'Date-only plan',countText:'tasks',unknownLegacy:'Schedule information is ambiguous',riskWindow:'Alert ahead',riskDays1:'1 day',riskDays3:'3 days',riskDays7:'7 days'},
+ zh:{title:'动态时间规划看板',summary:'计划日期优先；没有计划日期时，按截止日期暂时归类。',today:'今天',week:'未来7天',month:'未来8–30天',future:'30天以后',todayHint:'今天计划及过去未完成的计划',weekHint:'明天至第7天',monthHint:'第8天至第30天',futureHint:'第31天及以后',all:'所有项目',refresh:'刷新任务',showHelp:'显示说明',hideHelp:'隐藏说明',lang:'语言',project:'项目',noPlans:'无计划及截止日期',unverified:'计划状态待确认',risk:'截止风险提醒',riskHint:'显示已逾期、今天截止、未来{days}个自然日内截止（今天为第0天，包含第{days}天），以及计划安排晚于截止期限的任务。带具体时刻的任务按实际时刻判断是否逾期；提醒不改变任务所在列。',noPlanHint:'未找到可读取的计划日期或截止日期。仅有截止日期的任务已按截止日期进入上方时间列，并标注“未计划”。',unknownHint:'仅有 plannedAt 或存在无效的排程字段，且没有有效截止日期时，暂时单列核实。',noData:'暂无任务',expand:'展开',collapse:'收起',planned:'计划',deadline:'截止',noDeadline:'无截止',inbox:'收集箱',loading:'正在读取任务…',readError:'读取任务失败：{error}',apiMissing:'当前未提供 PluginAPI.getTasks',status:'读取 {total} 项任务 · 显示 {shown} 项未完成的顶层任务 · 更新于 {at}',asOf:'今天：{day} · 滚动日历日 · 本地时间',planLate:'计划日期已过 {days} 天，待重排',startPast:'计划开始已过 {elapsed}',windowPast:'超过预计结束时间 {elapsed}',inWindow:'处于预计执行时段',beforeStart:'距离计划开始还有 {elapsed}',dueToday:'今天截止',dueTomorrow:'明天截止',dueIn:'距离截止还有 {days} 天',dueLate:'截止已逾期 {days} 天',dueLateTime:'截止逾期 {elapsed}',dueSoonTime:'距离截止还有 {elapsed}',conflict:'计划晚于截止期限',estimateNote:'执行时段根据预计工时推算，不等于正式截止期限。',dataLimited:'插件无法核实全部 Planner 独立排程；按截止日期归类不代表已经设置计划执行时间。',planSource:'Planner',taskSource:'任务排程',legacySource:'仅有 plannedAt（待确认）',fallback:'未安排执行 · 按截止日期归类',prefsUnavailable:'偏好设置保存不可用，重新打开后语言或折叠状态可能重置。',dayOnly:'仅计划日期',countText:'项任务',unknownLegacy:'排程信息存在歧义',riskWindow:'提前提醒',riskDays1:'1天',riskDays3:'3天',riskDays7:'7天'}
+};
+let showHelp=false,riskDays=3,lang='en',tasks=[],projects=[],selectedProject='all',busy=false,lastDay='',lastAt=null;
+const PREF_KEY='dynamic-time-board-v1';let preferenceSaveError=false;
+const expanded={risk:true,unscheduled:true,unknown:false};
+async function savePreferences(){
+  if(typeof window.PluginAPI?.persistDataSynced!=='function'){preferenceSaveError=true;return;}
+  try{await PluginAPI.persistDataSynced(JSON.stringify({schema:1,lang,showHelp,riskDays,expanded:{...expanded},selectedProject}));preferenceSaveError=false;}
+  catch(err){preferenceSaveError=true;console.warn('[Time Board] Cannot save preferences:',err);}
+}
+async function loadPreferences(){
+  if(typeof window.PluginAPI?.loadSyncedData!=='function')return;
+  try{const raw=await PluginAPI.loadSyncedData();if(!raw)return;
+    const saved=JSON.parse(raw);if(!saved || saved.schema!==1)return;
+    if(saved.lang==='en'||saved.lang==='zh')lang=saved.lang;
+    if(typeof saved.showHelp==='boolean')showHelp=saved.showHelp;
+    if([1,3,7].includes(saved.riskDays))riskDays=saved.riskDays;
+    for(const k of ['risk','unscheduled','unknown'])if(typeof saved.expanded?.[k]==='boolean')expanded[k]=saved.expanded[k];
+    if(typeof saved.selectedProject==='string')selectedProject=saved.selectedProject;
+  }catch(err){console.warn('[Time Board] Cannot load preferences:',err);}
+}
 const $=id=>document.getElementById(id);
-const pad=n=>String(n).padStart(2,'0');
-const dayKey=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-const parseDue=t=>{ if(typeof t.dueDay==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(t.dueDay))return t.dueDay;
- if(typeof t.dueWithTime==='number'&&Number.isFinite(t.dueWithTime))return dayKey(new Date(t.dueWithTime)); return null;};
-function classify(key,now){if(!key)return 'none';const today=dayKey(now);if(key<=today)return 'today';
- const mondayOffset=(now.getDay()+6)%7;const sunday=new Date(now.getFullYear(),now.getMonth(),now.getDate()+6-mondayOffset);
- if(key<=dayKey(sunday))return 'week';const monthEnd=dayKey(new Date(now.getFullYear(),now.getMonth()+1,0));return key<=monthEnd?'month':'future';}
-function makeCard(task,now){const el=document.createElement('div');el.className='task';const heading=document.createElement('div');heading.className='task-title';heading.textContent=task.title||'（无标题）';el.append(heading);
- const meta=document.createElement('div');meta.className='task-meta';const key=parseDue(task), project=projects.find(p=>p.id===task.projectId);const bits=[];if(project)bits.push(project.title);if(key)bits.push('截止 '+key);meta.textContent=bits.join(' · ');if(key&&key<dayKey(now))meta.classList.add('late');el.append(meta);return el;}
-function render(){const now=new Date(), selected=$('project').value, active=tasks.filter(t=>t&&!t.isDone&&!t.parentId&&(selected==='all'||t.projectId===selected));
- const bins={today:[],week:[],month:[],future:[],none:[]};for(const t of active)bins[classify(parseDue(t),now)].push(t);
- for(const vals of Object.values(bins))vals.sort((a,b)=>String(parseDue(a)||'9999').localeCompare(String(parseDue(b)||'9999'))||String(a.title).localeCompare(String(b.title),'zh-CN'));
- const board=$('board');board.replaceChildren();for(const cfg of lanes){const section=document.createElement('section');section.className='lane';section.style.setProperty('--bg',cfg.bg);section.style.setProperty('--border',cfg.border);section.style.setProperty('--ink',cfg.ink);
- const head=document.createElement('h2');const ttl=document.createElement('span');ttl.textContent=cfg.title;const count=document.createElement('span');count.className='count';count.textContent=bins[cfg.key].length;head.append(ttl,count);section.append(head);
- const hint=document.createElement('div');hint.className='hint';hint.textContent=cfg.help;section.append(hint);
- if(!bins[cfg.key].length){const e=document.createElement('div');e.className='empty';e.textContent='暂无任务';section.append(e);}else bins[cfg.key].forEach(t=>section.append(makeCard(t,now)));board.append(section);}
- $('noCount').textContent=bins.none.length;const no=$('noItems');no.replaceChildren();bins.none.forEach(t=>no.append(makeCard(t,now)));
- $('date').textContent=`今天：${dayKey(now)} · 周一为每周起点 · 本地时间`;
- $('status').textContent=`共读取 ${tasks.length} 项任务，本视图显示 ${active.length} 项未完成的顶层任务；最近刷新：${now.toLocaleTimeString('zh-CN')}`;lastDay=dayKey(now);}
-async function reload(){if(refreshBusy)return;refreshBusy=true;$('reload').disabled=true;try{
- if(!window.PluginAPI||typeof PluginAPI.getTasks!=='function')throw new Error('当前版本未提供 getTasks 插件接口');
- const results=await Promise.all([PluginAPI.getTasks(),PluginAPI.getAllProjects().catch(()=>[])]);
- if(!Array.isArray(results[0]))throw new Error('getTasks 返回的不是任务列表');tasks=results[0];projects=Array.isArray(results[1])?results[1]:[];
- const sel=$('project'),previous=sel.value;sel.replaceChildren();let op=document.createElement('option');op.value='all';op.textContent='所有项目';sel.append(op);
- for(const p of projects){op=document.createElement('option');op.value=p.id;op.textContent=p.title;sel.append(op);}sel.value=[...sel.options].some(x=>x.value===previous)?previous:'all';
- $('notice').classList.add('hide');render();}catch(e){$('notice').textContent='无法读取任务：'+(e&&e.message?e.message:String(e))+'。请确认插件已启用，并从插件菜单打开。';$('notice').classList.remove('hide');$('status').textContent='读取失败';}finally{refreshBusy=false;$('reload').disabled=false;}}
- $('reload').addEventListener('click',reload);$('project').addEventListener('change',render);$('toggleNo').addEventListener('click',()=>{const isHidden=$('noItems').classList.toggle('hide');$('toggleNo').textContent=isHidden?'展开':'收起';$('toggleNo').setAttribute('aria-expanded',String(!isHidden));});
- reload();setInterval(()=>{if(dayKey(new Date())!==lastDay)reload();},30000);
- setInterval(()=>{if(!document.hidden)reload();},120000);
- document.addEventListener('visibilitychange',()=>{if(!document.hidden)reload();});
+const t=k=>(translations[lang]||translations.en)[k]||k;
+const sub=(template,args)=>template.replace(/\{(\w+)\}/g,(_,k)=>String(args[k]??''));
+const node=(tag,cls,txt)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(txt!==undefined)el.textContent=txt;return el;};
+function syncHelp(){
+ document.body.classList.toggle('show-help',showHelp);
+ const btn=$('toggleHelp');btn.textContent=t(showHelp?'hideHelp':'showHelp');btn.setAttribute('aria-pressed',String(showHelp));
+ btn.title=t(showHelp?'hideHelp':'showHelp');
+}
+const styles={today:['#faebea','#eecdc9','#a44c43'],week:['#fcf2df','#efddb7','#8d6921'],month:['#e8f1f9','#ccdfeb','#39758a'],future:['#f0f1f2','#e0e3e6','#66707c']};
+function deadlineMessage(r){switch(r.kind){case 'overdueDay':return sub(t('dueLate'),{days:r.days});case 'overdueExact':return sub(t('dueLateTime'),{elapsed:L.formatElapsed(r.ms,lang)});case 'today':return t('dueToday');case 'soonDay':return r.days===1?t('dueTomorrow'):sub(t('dueIn'),{days:r.days});case 'soonExact':return sub(t('dueSoonTime'),{elapsed:L.formatElapsed(r.ms,lang)});default:return null;}}
+function timeMessage(r){switch(r.kind){case 'missedDay':return sub(t('planLate'),{days:r.days});case 'windowElapsed':return sub(t('windowPast'),{elapsed:L.formatElapsed(r.ms,lang)});case 'startElapsed':return sub(t('startPast'),{elapsed:L.formatElapsed(r.ms,lang)});case 'inWindow':return t('inWindow');case 'beforeStart':return sub(t('beforeStart'),{elapsed:L.formatElapsed(r.ms,lang)});default:return null;}}
+function clockLabel(timestamp){
+ const date=new Date(timestamp);const pad=n=>String(n).padStart(2,'0');
+ return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+function dateTimeRow(kind,day,at,estimate){
+ const row=node('div','meta-row');
+ row.append(node('span','meta-label',t(kind)+':'));
+ row.append(node('span','meta-day',day));
+ if(at!==null && at!==undefined){
+  const start=clockLabel(at);
+  const end=kind==='planned'&&typeof estimate==='number'&&Number.isFinite(estimate)&&estimate>0?at+estimate:null;
+  if(end!==null){
+   const endDay=L.key(new Date(end));
+   if(endDay===day) row.append(node('span','meta-time',start+'–'+clockLabel(end)));
+   else{
+    row.append(node('span','meta-time',start));
+    row.append(node('span','meta-separator','→'));
+    row.append(node('span','meta-day',endDay));
+    row.append(node('span','meta-time',clockLabel(end)));
+   }
+  }else row.append(node('span','meta-time',start));
+ }
+ return row;
+}
+function card(record,forRisk=false){const {task,result:r}=record;
+ const el=node('article','task');
+ const heading=node('div','task-heading');
+ heading.append(node('div','task-title',task.title||'(Untitled)'));
+ const project=projects.find(x=>String(x.id)===String(task.projectId));
+ if(project){
+  const name=project.title||String(project.id);
+  const tag=node('span','project-tag',name);
+  tag.title=name;tag.setAttribute('aria-label',t('project')+': '+name);
+  heading.append(tag);
+ }
+ el.append(heading);
+ const meta=node('div','task-meta');
+ if(r.plan.day)meta.append(dateTimeRow('planned',r.plan.day,r.plan.startMs,task.timeEstimate));
+ if(r.deadline.day)meta.append(dateTimeRow('deadline',r.deadline.day,r.deadline.at,null));
+ if(!r.plan.day&&r.plan.source==='legacy')meta.append(node('div','meta-legacy',t('legacySource')));
+ if(meta.children.length)el.append(meta);
+ const badges=node('div','badges');const timeText=timeMessage(r.time),dueText=deadlineMessage(r.risk);
+ if(r.placementSource==='deadline')badges.append(node('span','pill caution',t('fallback')));
+ if(timeText && !forRisk)badges.append(node('span',r.time.kind==='windowElapsed'||r.time.kind==='missedDay'?'pill caution':'pill neutral',timeText));
+ if(dueText)badges.append(node('span',r.risk.kind.startsWith('overdue')?'pill danger':'pill attention',dueText));
+ if(r.conflict)badges.append(node('span','pill danger',t('conflict')));
+ if(badges.children.length)el.append(badges);
+ return el;}
+function headerLine(title,count){const head=node('div','section-title');head.append(node('span','',title),node('span','count',String(count)));return head;}
+function panel(title,hint,items,styleKey){const sec=node('section','lane');const [bg,border,ink]=styles[styleKey];sec.style.setProperty('--bg',bg);sec.style.setProperty('--border',border);sec.style.setProperty('--ink',ink);sec.append(headerLine(t(title),items.length),node('p','hint help-detail',t(hint)));sec.title=t(hint);
+ if(!items.length)sec.append(node('div','empty',t('noData')));
+ items.forEach(r=>sec.append(card(r)));return sec;}
+function updateToggle(button,items,isHidden){
+ items.classList.toggle('hidden',isHidden);
+ button.textContent=t(isHidden?'expand':'collapse');
+ button.setAttribute('aria-expanded',String(!isHidden));
+}
+// All three auxiliary sections use the same expand/collapse semantics.
+// A zero-item section displays its empty message and has no inert button.
+function sectionList(root,title,hint,items,sectionKey,options={}){
+ const isRisk=Boolean(options.isRisk);
+ root.replaceChildren();
+ const bar=node('div',isRisk?'alert-title':'unscheduled-head');
+ bar.append(headerLine(t(title),items.length));
+ const btn=node('button','small-btn');
+ btn.type='button';
+ btn.hidden=items.length===0;
+ const content=node('div',isRisk?'risk-items':'bottom-items');
+ content.id='timeboard-items-'+sectionKey;
+ btn.setAttribute('aria-controls',content.id);
+ if(isRisk){
+  const controls=node('div','risk-controls');
+  const riskLabel=node('label','risk-window-control');
+  riskLabel.append(node('span','',t('riskWindow')));
+  const select=node('select','');select.id='riskDays';
+  select.setAttribute('aria-label',t('riskWindow'));
+  for(const days of [1,3,7]){const opt=node('option','',t('riskDays'+days));opt.value=String(days);select.append(opt);}
+  select.value=String(riskDays);
+  select.addEventListener('change',()=>{
+   const days=Number(select.value);
+   if(![1,3,7].includes(days))return;
+   riskDays=days;render();void savePreferences();
+  });
+  riskLabel.append(select);controls.append(riskLabel,btn);bar.append(controls);
+ }else bar.append(btn);
+ const helpText=isRisk?sub(t(hint),{days:riskDays}):t(hint);
+ root.append(bar,node('p','hint help-detail',helpText));bar.title=helpText;
+ items.forEach(item=>content.append(card(item,isRisk)));
+ if(!items.length)content.append(node('p','empty',t('noData')));
+ root.append(content);
+ updateToggle(btn,content,items.length>0&&!expanded[sectionKey]);
+ btn.addEventListener('click',()=>{
+  expanded[sectionKey]=!expanded[sectionKey];
+  updateToggle(btn,content,!expanded[sectionKey]);
+  void savePreferences();
+ });
+}
+function render(){const now=new Date(),p=$('project').value;
+ const active=tasks.filter(x=>x&&!x.isDone&&!x.parentId&&(p==='all'||String(x.projectId)===p));
+ const lists={today:[],week:[],month:[],future:[],unscheduled:[],unknown:[]};const risks=[];
+ for(const task of active){const result=L.classify(task,null,now,riskDays),record={task,result};if(!lists[result.lane])lists.unknown.push(record);else lists[result.lane].push(record);
+  if(['overdueDay','overdueExact','today','soonDay','soonExact'].includes(result.risk.kind)||result.conflict)risks.push(record);
+ }
+ const sortText=(a,b)=>String(a.task.title||'').localeCompare(String(b.task.title||''),lang==='zh'?'zh-CN':'en');
+ for(const k of ['today','week','month','future']) lists[k].sort((a,b)=>a.result.placementDay.localeCompare(b.result.placementDay)||((a.result.placementAt??Infinity)-(b.result.placementAt??Infinity))||sortText(a,b));
+ const deadlineSort=(a,b)=>(a.result.deadline.day||'9999-12-31').localeCompare(b.result.deadline.day||'9999-12-31')||sortText(a,b);
+ lists.unscheduled.sort(deadlineSort);lists.unknown.sort(deadlineSort);risks.sort((a,b)=>{const ar=a.result.risk.kind.startsWith('overdue')?0:a.result.conflict?1:2,br=b.result.risk.kind.startsWith('overdue')?0:b.result.conflict?1:2;return ar-br||deadlineSort(a,b);});
+ const board=$('board');board.replaceChildren(panel('today','todayHint',lists.today,'today'),panel('week','weekHint',lists.week,'week'),panel('month','monthHint',lists.month,'month'),panel('future','futureHint',lists.future,'future'));
+ sectionList($('unscheduled'),'noPlans','noPlanHint',lists.unscheduled,'unscheduled');
+ const unknown=$('unknown');unknown.classList.toggle('hidden',lists.unknown.length===0);if(lists.unknown.length)sectionList(unknown,'unverified','unknownHint',lists.unknown,'unknown');
+ sectionList($('alerts'),'risk','riskHint',risks,'risk',{isRisk:true});
+ $('date').textContent=sub(t('asOf'),{day:L.key(now)});$('status').textContent=sub(t('status'),{total:tasks.length,shown:active.length,at:(lastAt||now).toLocaleTimeString(lang==='zh'?'zh-CN':'en-US')});lastDay=L.key(now);
+ if(preferenceSaveError){$('warning').textContent=t('prefsUnavailable');$('warning').classList.remove('hidden');}else $('warning').classList.add('hidden');
+}
+async function reload(){if(busy)return;busy=true;$('reload').disabled=true;
+ try{if(!window.PluginAPI||typeof PluginAPI.getTasks!=='function')throw new Error(t('apiMissing'));
+  const values=await Promise.allSettled([PluginAPI.getTasks(),typeof PluginAPI.getAllProjects==='function'?PluginAPI.getAllProjects():Promise.resolve([])]);
+  if(values[0].status!=='fulfilled'||!Array.isArray(values[0].value))throw new Error(values[0].status==='rejected'?String(values[0].reason):'getTasks returned invalid data');
+  tasks=values[0].value;projects=values[1].status==='fulfilled'&&Array.isArray(values[1].value)?values[1].value:[];lastAt=new Date();
+  const sel=$('project');sel.replaceChildren(node('option','',t('all')));sel.options[0].value='all';for(const proj of projects){const opt=node('option','',proj.title||String(proj.id));opt.value=String(proj.id);sel.append(opt);}sel.value=[...sel.options].some(x=>x.value===selectedProject)?selectedProject:'all';selectedProject=sel.value;
+  $('error').classList.add('hidden');render();
+ }catch(err){$('error').textContent=sub(t('readError'),{error:String(err.message||err)});$('error').classList.remove('hidden');}finally{busy=false;$('reload').disabled=false;}}
+function language(next){lang=next==='zh'?'zh':'en';syncHelp();document.documentElement.lang=lang==='zh'?'zh-CN':'en';$('language').value=lang;$('pageTitle').textContent=t('title');$('summary').textContent=t('summary');$('reload').textContent=t('refresh');$('estimateNote').textContent=t('estimateNote')+' '+t('dataLimited');$('project').setAttribute('aria-label',t('project'));$('language').setAttribute('aria-label',t('lang'));if($('project').options.length)$('project').options[0].textContent=t('all');render();}
+$('language').addEventListener('change',e=>{language(e.target.value);void savePreferences();});
+$('project').addEventListener('change',()=>{selectedProject=$('project').value;render();void savePreferences();});
+$('reload').addEventListener('click',reload);
+$('toggleHelp').addEventListener('click',()=>{showHelp=!showHelp;syncHelp();void savePreferences();});
+// A first-time install defaults to English for international review.
+// Returning users get their explicit choice back from the plugin's synced preference data.
+(async()=>{await loadPreferences();language(lang);await reload();})();
+// Update time-based badges more often than task data, including across midnight.
+setInterval(()=>{if(!document.hidden)render();},60000);
+setInterval(()=>{if(!document.hidden)reload();},180000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)reload();});
 })();
 </script></body></html>
